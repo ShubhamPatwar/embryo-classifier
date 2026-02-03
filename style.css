@@ -2,20 +2,21 @@
 .brand-bar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 18px;
+  margin-bottom: 36px;
   justify-content: center;
 }
 
 .brand-logo {
-  height: 46px;
+  height: 64px;          /* Bigger logo */
   width: auto;
   object-fit: contain;
 }
 
 .brand-text {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: .3px;
+  font-size: 1.45rem;    /* Bigger text */
+  font-weight: 700;
+  letter-spacing: .6px;
   color: var(--text);
+  font-family: var(--font-serif);
 }
