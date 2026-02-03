@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Embryo Classifier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c1117;
+    --surface: #151b24;
+    --surface2: #1e2733;
+    --border: rgba(255,255,255,.07);
+    --text: #e4e8ed;
+    --text-dim: #7a8694;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,.15);
+    --bad: #f87171;
+    --bad-dim: rgba(248,113,113,.15);
+    --cyan: #67e8f9;
+    --cyan-dim: rgba(103,232,249,.12);
+    --radius: 14px;
+    --font-serif: 'DM Serif Display', Georgia, serif;
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: .18; pointer-events: none; z-index: 0; }
+  .orb--1 { width: 500px; height: 500px; background: #4ade80; top: -150px; left: -100px; }
+  .orb--2 { width: 400px; height: 400px; background: #67e8f9; bottom: -120px; right: -80px; }
+  .orb--3 { width: 300px; height: 300px; background: #a78bfa; top: 50%; left: 55%; }
+
+  .wrapper { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 48px; }
+  .header__badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--cyan-dim); border: 1px solid rgba(103,232,249,.25);
+    color: var(--cyan); font-size: .78rem; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 50px; margin-bottom: 18px;
+  }
+  .header__badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .header h1 {
+    font-family: var(--font-serif); font-size: 2.8rem; font-weight: 400; line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .header p { color: var(--text-dim); margin-top: 12px; font-size: .95rem; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(6px); padding: 32px; }
+
+  /* Dropzone */
+  .dropzone { border: 2px dashed rgba(255,255,255,.12); border-radius: var(--radius); padding: 52px 24px; text-align: center; cursor: pointer; transition: border-color .25s, background .25s; }
+  .dropzone:hover, .dropzone.over { border-color: var(--cyan); background: var(--cyan-dim); }
+  .dropzone__icon { width: 56px; height: 56px; margin: 0 auto 16px; background: var(--surface2); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+  .dropzone__icon svg { width: 28px; height: 28px; stroke: var(--cyan); fill: none; stroke-width: 1.8; }
+  .dropzone p { color: var(--text-dim); font-size: .9rem; }
+  .dropzone p strong { color: var(--text); }
+  .dropzone .formats { color: var(--text-dim); font-size: .77rem; margin-top: 6px; opacity: .6; }
+  #fileInput { display: none; }
+
+  /* Preview */
+  .preview-section { display: none; margin-top: 28px; animation: fadeUp .35s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  .preview-row { display: flex; gap: 24px; align-items: flex-start; }
+  .preview-img-wrap { flex: 0 0 220px; background: var(--surface2); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .preview-img-wrap img { width: 100%; display: block; object-fit: cover; max-height: 240px; }
+  .preview-meta { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .preview-meta .label { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); }
+  .preview-meta .filename { font-size: .92rem; color: var(--text); font-weight: 500; }
+  .preview-meta .filesize { font-size: .8rem; color: var(--text-dim); }
+
+  /* Button */
+  .btn-classify {
+    width: 100%; margin-top: 24px; padding: 15px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff;
+    font-family: var(--font-sans); font-size: .95rem; font-weight: 600;
+    cursor: pointer; transition: transform .15s, box-shadow .2s;
+    box-shadow: 0 4px 24px rgba(34,197,94,.28); position: relative; overflow: hidden;
+  }
+  .btn-classify:hover { transform: translateY(-1px); box-shadow: 0 6px 32px rgba(34,197,94,.38); }
+  .btn-classify:active { transform: translateY(0); }
+  .btn-classify:disabled { background: var(--surface2); box-shadow: none; color: var(--text-dim); cursor: not-allowed; }
+  .btn-classify::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); transition:left .5s ease; }
+  .btn-classify:hover::after { left: 140%; }
+
+  /* Spinner */
+  .spinner-wrap { display: none; text-align: center; padding: 28px 0; }
+  .spinner { width: 44px; height: 44px; border: 3px solid var(--surface2); border-top-color: var(--cyan); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .spinner-wrap p { color: var(--text-dim); margin-top: 14px; font-size: .88rem; }
+
+  /* Result */
+  .result { display: none; margin-top: 28px; border-radius: var(--radius); padding: 28px; animation: fadeUp .4s ease; border: 1px solid; }
+  .result.good { background: var(--accent-dim); border-color: rgba(74,222,128,.3); }
+  .result.bad  { background: var(--bad-dim);    border-color: rgba(248,113,113,.3); }
+  .result__header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .result__icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+  .result.good .result__icon { background: rgba(74,222,128,.18); }
+  .result.bad  .result__icon { background: rgba(248,113,113,.18); }
+  .result__title { font-family: var(--font-serif); font-size: 1.55rem; }
+  .result.good .result__title { color: var(--accent); }
+  .result.bad  .result__title { color: var(--bad); }
+  .result__confidence { font-size: .82rem; color: var(--text-dim); margin-top: 2px; }
+  .conf-bar-wrap { margin-top: 16px; }
+  .conf-bar-label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--text-dim); margin-bottom: 6px; }
+  .conf-bar-bg { height: 8px; border-radius: 50px; background: var(--surface2); overflow: hidden; }
+  .conf-bar-fill { height: 100%; border-radius: 50px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .result.good .conf-bar-fill { background: var(--accent); }
+  .result.bad  .conf-bar-fill { background: var(--bad); }
+  .result__note { margin-top: 18px; font-size: .82rem; color: var(--text-dim); background: rgba(255,255,255,.04); border-radius: 8px; padding: 12px 14px; border-left: 3px solid; }
+  .result.good .result__note { border-color: var(--accent); }
+  .result.bad  .result__note { border-color: var(--bad); }
+
+  /* Error box */
+  .error-box { display:none; margin-top:20px; background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.3); border-radius:10px; padding:14px 18px; color:#fca5a5; font-size:.85rem; }
+
+  .reset-link { display: block; text-align: center; margin-top: 22px; color: var(--text-dim); font-size: .82rem; cursor: pointer; background: none; border: none; font-family: var(--font-sans); transition: color .2s; }
+  .reset-link:hover { color: var(--cyan); }
+
+  .footer-note { text-align: center; margin-top: 48px; font-size: .75rem; color: var(--text-dim); opacity: .55; max-width: 440px; margin-left: auto; margin-right: auto; }
+
+  @media (max-width: 540px) {
+    .header h1 { font-size: 2rem; }
+    .preview-row { flex-direction: column; }
+    .preview-img-wrap { flex: 0 0 auto; width: 100%; }
+    .card { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb--1"></div>
+<div class="orb orb--2"></div>
+<div class="orb orb--3"></div>
+
+<div class="wrapper">
+  <header class="header">
+    <div class="header__badge"><span class="dot"></span> AI-Powered Analysis</div>
+    <h1>Embryo Classifier</h1>
+    <p>Upload a microscopic embryo image and let the model assess its viability in seconds.</p>
+  </header>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone__icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p><strong>Drag & drop</strong> your embryo image here</p>
+      <p style="margin-top:8px;">or <strong style="color:var(--cyan);cursor:pointer;" id="browseBtn">browse</strong> to select a file</p>
+      <p class="formats">Supports JPG, PNG, TIFF, BMP &middot; Max 25 MB</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*,.tiff,.tif,.bmp"/>
+
+    <div class="preview-section" id="previewSection">
+      <div class="preview-row">
+        <div class="preview-img-wrap"><img id="previewImg" src="" alt="Embryo preview"/></div>
+        <div class="preview-meta">
+          <span class="label">Selected Image</span>
+          <span class="filename" id="fileName">—</span>
+          <span class="filesize" id="fileSize">—</span>
+        </div>
+      </div>
+      <button class="btn-classify" id="classifyBtn">Classify Embryo</button>
+    </div>
+
+    <div class="spinner-wrap" id="spinnerWrap">
+      <div class="spinner"></div>
+      <p>Analyzing embryo &hellip;</p>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="result" id="resultCard">
+      <div class="result__header">
+        <div class="result__icon" id="resultIcon"></div>
+        <div>
+          <div class="result__title" id="resultTitle"></div>
+          <div class="result__confidence" id="resultConfLabel"></div>
+        </div>
+      </div>
+      <div class="conf-bar-wrap">
+        <div class="conf-bar-label"><span>Confidence</span><span id="confPercent"></span></div>
+        <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar" style="width:0%"></div></div>
+      </div>
+      <div class="result__note" id="resultNote"></div>
+    </div>
+
+    <button class="reset-link" id="resetBtn" style="display:none;">↺ Upload another image</button>
+  </div>
+
+  <p class="footer-note">⚠️ This tool is intended for research &amp; assisted decision-making only. Final clinical decisions must be made by qualified embryologists.</p>
+</div>
+
+<!-- ─── Script ─── -->
+<script>
+(function(){
+  // ┌─────────────────────────────────────────────────────┐
+  // │  🔧  PUT YOUR BACKEND URL HERE                      │
+  // │  e.g. "https://your-app.onrender.com"               │
+  // │  or   "http://localhost:8000"  (local testing)      │
+  // └─────────────────────────────────────────────────────┘
+  const BACKEND_URL = "http://localhost:8000";
+
+  const dropzone       = document.getElementById('dropzone');
+  const fileInput      = document.getElementById('fileInput');
+  const browseBtn      = document.getElementById('browseBtn');
+  const previewSection = document.getElementById('previewSection');
+  const previewImg     = document.getElementById('previewImg');
+  const fileNameEl     = document.getElementById('fileName');
+  const fileSizeEl     = document.getElementById('fileSize');
+  const classifyBtn    = document.getElementById('classifyBtn');
+  const spinnerWrap    = document.getElementById('spinnerWrap');
+  const errorBox       = document.getElementById('errorBox');
+  const resultCard     = document.getElementById('resultCard');
+  const resultIcon     = document.getElementById('resultIcon');
+  const resultTitle    = document.getElementById('resultTitle');
+  const resultConfLabel= document.getElementById('resultConfLabel');
+  const confPercent    = document.getElementById('confPercent');
+  const confBar        = document.getElementById('confBar');
+  const resultNote     = document.getElementById('resultNote');
+  const resetBtn       = document.getElementById('resetBtn');
+
+  let currentFile = null;
+
+  /* ── Drag & Drop ── */
+  dropzone.addEventListener('dragover',  e => { e.preventDefault(); dropzone.classList.add('over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault(); dropzone.classList.remove('over');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  dropzone.addEventListener('click', () => fileInput.click());
+  browseBtn.addEventListener('click',  e => { e.stopPropagation(); fileInput.click(); });
+  fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+  /* ── Handle File ── */
+  function handleFile(file) {
+    if (!file.type.startsWith('image/') && !file.name.match(/\.(tiff?|bmp)$/i)) {
+      alert('Please upload a valid image (JPG, PNG, TIFF, BMP).'); return;
+    }
+    if (file.size > 25 * 1024 * 1024) { alert('File must be under 25 MB.'); return; }
+    currentFile = file;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      previewImg.src     = ev.target.result;
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = formatBytes(file.size);
+      previewSection.style.display = 'block';
+      resultCard.style.display     = 'none';
+      errorBox.style.display       = 'none';
+      resetBtn.style.display       = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function formatBytes(b) {
+    if (b < 1024)    return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(2) + ' MB';
+  }
+
+  /* ── Classify (calls your FastAPI backend) ── */
+  classifyBtn.addEventListener('click', async () => {
+    classifyBtn.disabled         = true;
+    spinnerWrap.style.display    = 'block';
+    resultCard.style.display     = 'none';
+    errorBox.style.display       = 'none';
+    resetBtn.style.display       = 'none';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', currentFile);                   // key must be "file" — matches FastAPI param name
+
+      const response = await fetch(BACKEND_URL + '/predict', {
+        method: 'POST',
+        body:   formData
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Server error ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();                     // { label: "GOOD"|"BAD", confidence: 0.87 }
+      showResult(data.label, data.confidence);
+
+    } catch (err) {
+      spinnerWrap.style.display = 'none';
+      classifyBtn.disabled      = false;
+      errorBox.style.display    = 'block';
+      errorBox.textContent      = '⚠️  ' + err.message + ' — Make sure your backend is running.';
+    }
+  });
+
+  /* ── Show Result ── */
+  function showResult(label, confidence) {
+    spinnerWrap.style.display = 'none';
+    classifyBtn.disabled      = false;
+
+    const isGood = label.toUpperCase() === 'GOOD';
+    resultCard.className        = 'result ' + (isGood ? 'good' : 'bad');
+    resultIcon.textContent      = isGood ? '✅' : '⚠️';
+    resultTitle.textContent     = isGood ? 'Good Embryo' : 'Poor Embryo';
+    resultConfLabel.textContent = `Model confidence: ${(confidence * 100).toFixed(1)} %`;
+    confPercent.textContent     = `${(confidence * 100).toFixed(1)} %`;
+
+    confBar.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { confBar.style.width = (confidence * 100) + '%'; });
+    });
+
+    resultNote.textContent = isGood
+      ? 'The embryo shows morphological characteristics consistent with a viable, high-quality embryo. Recommended for transfer consideration.'
+      : 'The embryo exhibits features that may indicate reduced viability. Further expert review is advised before any clinical decision.';
+
+    resultCard.style.display = 'block';
+    resetBtn.style.display   = 'block';
+  }
+
+  /* ── Reset ── */
+  resetBtn.addEventListener('click', () => {
+    currentFile = null; fileInput.value = '';
+    previewSection.style.display = 'none';
+    resultCard.style.display     = 'none';
+    errorBox.style.display       = 'none';
+    resetBtn.style.display       = 'none';
+  });
+})();
+</script>
+</body>
+</html>
