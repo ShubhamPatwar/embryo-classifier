@@ -1,0 +1,21 @@
+/* ─── Brand Header ─── */
+.brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  justify-content: center;
+}
+
+.brand-logo {
+  height: 46px;
+  width: auto;
+  object-fit: contain;
+}
+
+.brand-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: .3px;
+  color: var(--text);
+}
