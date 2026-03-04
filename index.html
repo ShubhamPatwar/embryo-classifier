@@ -44,6 +44,18 @@
 
   .wrapper { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; padding: 48px 24px 80px; }
 
+  /* Brand Bar */
+  .brand-bar {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-bottom: 32px; padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-logo { height: 48px; width: auto; }
+  .brand-text {
+    font-size: 1.1rem; font-weight: 600; color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
   /* Header */
   .header { text-align: center; margin-bottom: 48px; }
   .header__badge {
@@ -78,6 +90,28 @@
   }
   .model-option:hover { border-color: var(--cyan); color: var(--text); }
   .model-option.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+
+  /* Samples Section */
+  .samples-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;
+  }
+  .samples-header { margin-bottom: 14px; }
+  .samples-label { font-size: .85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .samples-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; }
+  .sample-item {
+    aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+    cursor: pointer; border: 2px solid var(--border);
+    transition: all .2s; position: relative;
+  }
+  .sample-item img { width: 100%; height: 100%; object-fit: cover; }
+  .sample-item:hover { border-color: var(--cyan); transform: scale(1.05); box-shadow: 0 4px 16px rgba(103,232,249,.3); }
+  .sample-item::after {
+    content: 'Click to test'; position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.8); color: var(--cyan); font-size: .7rem;
+    padding: 4px; text-align: center; opacity: 0; transition: opacity .2s;
+  }
+  .sample-item:hover::after { opacity: 1; }
 
   /* Card */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(6px); padding: 32px; }
@@ -204,6 +238,12 @@
 
 <div class="wrapper">
 
+  <!-- Brand Bar -->
+  <div class="brand-bar">
+    <img src="assets/medinno-logo-transparent.png" alt="Medinno Technologies Logo" class="brand-logo">
+    <span class="brand-text">Medinno Technologies Pvt. Ltd.</span>
+  </div>
+
   <header class="header">
     <div class="header__badge"><span class="dot"></span> Multi-Model AI Analysis</div>
     <h1>Embryo Classifier Pro</h1>
@@ -218,6 +258,14 @@
       <div class="model-option" data-model="resnet18">ResNet-18</div>
       <div class="model-option" data-model="resnet50">ResNet-50</div>
     </div>
+  </div>
+
+  <!-- Sample Images -->
+  <div class="samples-section">
+    <div class="samples-header">
+      <span class="samples-label">Try Sample Images:</span>
+    </div>
+    <div class="samples-grid" id="samplesGrid"></div>
   </div>
 
   <div class="card">
@@ -299,6 +347,16 @@
 (function(){
   const BACKEND_URL = "https://shubh16-embryo-classifier-api.hf.space";
   
+  // Sample embryo images (you can replace these URLs with your own hosted images)
+  const SAMPLE_IMAGES = [
+    'https://picsum.photos/seed/embryo1/300/300',
+    'https://picsum.photos/seed/embryo2/300/300',
+    'https://picsum.photos/seed/embryo3/300/300',
+    'https://picsum.photos/seed/embryo4/300/300',
+    'https://picsum.photos/seed/embryo5/300/300',
+    'https://picsum.photos/seed/embryo6/300/300'
+  ];
+  
   let selectedModel = "custom";
   let currentFile = null;
   let predictionHistory = JSON.parse(localStorage.getItem('embryo_history') || '[]');
@@ -306,6 +364,7 @@
   const dropzone       = document.getElementById('dropzone');
   const fileInput      = document.getElementById('fileInput');
   const browseBtn      = document.getElementById('browseBtn');
+  const samplesGrid    = document.getElementById('samplesGrid');
   const previewSection = document.getElementById('previewSection');
   const previewImg     = document.getElementById('previewImg');
   const fileNameEl     = document.getElementById('fileName');
@@ -328,6 +387,30 @@
   const historyGrid    = document.getElementById('historyGrid');
   const historyEmpty   = document.getElementById('historyEmpty');
   const clearHistory   = document.getElementById('clearHistory');
+
+  /* Load Sample Images */
+  function loadSamples() {
+    samplesGrid.innerHTML = SAMPLE_IMAGES.map((url, idx) => `
+      <div class="sample-item" data-url="${url}">
+        <img src="${url}" alt="Sample ${idx + 1}"/>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.sample-item').forEach(item => {
+      item.addEventListener('click', () => loadSampleImage(item.dataset.url));
+    });
+  }
+
+  async function loadSampleImage(url) {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], `sample_embryo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      handleFile(file);
+    } catch (err) {
+      alert('Failed to load sample image. Please try uploading your own.');
+    }
+  }
 
   /* Model Selection */
   document.querySelectorAll('.model-option').forEach(btn => {
@@ -497,6 +580,7 @@
     resetBtn.style.display       = 'none';
   });
 
+  loadSamples();
   renderHistory();
 })();
 </script>
