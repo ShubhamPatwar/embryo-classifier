@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Embryo Classifier</title>
-<link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<title>Embryo Classifier Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,6 +21,8 @@
     --bad-dim: rgba(248,113,113,.15);
     --cyan: #67e8f9;
     --cyan-dim: rgba(103,232,249,.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,.12);
     --radius: 14px;
     --font-serif: 'DM Serif Display', Georgia, serif;
     --font-sans: 'DM Sans', system-ui, sans-serif;
@@ -41,7 +42,7 @@
   .orb--2 { width: 400px; height: 400px; background: #67e8f9; bottom: -120px; right: -80px; }
   .orb--3 { width: 300px; height: 300px; background: #a78bfa; top: 50%; left: 55%; }
 
-  .wrapper { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; }
+  .wrapper { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; padding: 48px 24px 80px; }
 
   /* Header */
   .header { text-align: center; margin-bottom: 48px; }
@@ -55,11 +56,28 @@
   .header__badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); animation: pulse-dot 2s ease-in-out infinite; }
   @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
   .header h1 {
-    font-family: var(--font-serif); font-size: 2.8rem; font-weight: 400; line-height: 1.1;
+    font-family: var(--font-serif); font-size: 3rem; font-weight: 400; line-height: 1.1;
     background: linear-gradient(135deg, #fff 30%, var(--cyan));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .header p { color: var(--text-dim); margin-top: 12px; font-size: .95rem; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .header p { color: var(--text-dim); margin-top: 12px; font-size: .95rem; max-width: 540px; margin-left: auto; margin-right: auto; }
+
+  /* Model Selector */
+  .model-selector {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .model-selector__label { font-size: .85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .model-selector__options { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; }
+  .model-option {
+    flex: 1; min-width: 120px; padding: 10px 16px; border-radius: 8px;
+    background: var(--surface2); border: 2px solid transparent;
+    color: var(--text-dim); font-size: .88rem; font-weight: 500;
+    cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .model-option:hover { border-color: var(--cyan); color: var(--text); }
+  .model-option.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
 
   /* Card */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(6px); padding: 32px; }
@@ -109,21 +127,33 @@
   .result { display: none; margin-top: 28px; border-radius: var(--radius); padding: 28px; animation: fadeUp .4s ease; border: 1px solid; }
   .result.good { background: var(--accent-dim); border-color: rgba(74,222,128,.3); }
   .result.bad  { background: var(--bad-dim);    border-color: rgba(248,113,113,.3); }
-  .result__header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .result__header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
   .result__icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
   .result.good .result__icon { background: rgba(74,222,128,.18); }
   .result.bad  .result__icon { background: rgba(248,113,113,.18); }
-  .result__title { font-family: var(--font-serif); font-size: 1.55rem; }
+  .result__title { font-family: var(--font-serif); font-size: 1.65rem; }
   .result.good .result__title { color: var(--accent); }
   .result.bad  .result__title { color: var(--bad); }
   .result__confidence { font-size: .82rem; color: var(--text-dim); margin-top: 2px; }
-  .conf-bar-wrap { margin-top: 16px; }
-  .conf-bar-label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--text-dim); margin-bottom: 6px; }
-  .conf-bar-bg { height: 8px; border-radius: 50px; background: var(--surface2); overflow: hidden; }
-  .conf-bar-fill { height: 100%; border-radius: 50px; transition: width .6s cubic-bezier(.4,0,.2,1); }
-  .result.good .conf-bar-fill { background: var(--accent); }
-  .result.bad  .conf-bar-fill { background: var(--bad); }
-  .result__note { margin-top: 18px; font-size: .82rem; color: var(--text-dim); background: rgba(255,255,255,.04); border-radius: 8px; padding: 12px 14px; border-left: 3px solid; }
+  .result__model { font-size: .75rem; color: var(--text-dim); margin-top: 4px; opacity: .7; }
+
+  /* Advanced Metrics */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .metric-card { background: rgba(255,255,255,.04); border-radius: 10px; padding: 16px; border: 1px solid var(--border); }
+  .metric-card__label { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-bottom: 8px; }
+  .metric-card__value { font-size: 1.8rem; font-weight: 600; font-family: var(--font-serif); }
+  .result.good .metric-card__value { color: var(--accent); }
+  .result.bad .metric-card__value { color: var(--bad); }
+
+  /* Confidence bar */
+  .conf-bar-wrap { margin-top: 20px; }
+  .conf-bar-label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--text-dim); margin-bottom: 8px; }
+  .conf-bar-bg { height: 10px; border-radius: 50px; background: var(--surface2); overflow: hidden; position: relative; }
+  .conf-bar-fill { height: 100%; border-radius: 50px; transition: width .6s cubic-bezier(.4,0,.2,1); position: relative; }
+  .result.good .conf-bar-fill { background: linear-gradient(90deg, var(--accent), #22c55e); }
+  .result.bad  .conf-bar-fill { background: linear-gradient(90deg, var(--bad), #dc2626); }
+
+  .result__note { margin-top: 20px; font-size: .82rem; color: var(--text-dim); background: rgba(255,255,255,.04); border-radius: 8px; padding: 12px 14px; border-left: 3px solid; }
   .result.good .result__note { border-color: var(--accent); }
   .result.bad  .result__note { border-color: var(--bad); }
 
@@ -133,13 +163,36 @@
   .reset-link { display: block; text-align: center; margin-top: 22px; color: var(--text-dim); font-size: .82rem; cursor: pointer; background: none; border: none; font-family: var(--font-sans); transition: color .2s; }
   .reset-link:hover { color: var(--cyan); }
 
-  .footer-note { text-align: center; margin-top: 48px; font-size: .75rem; color: var(--text-dim); opacity: .55; max-width: 440px; margin-left: auto; margin-right: auto; }
+  /* History Section */
+  .history-section { margin-top: 48px; }
+  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .history-header h2 { font-family: var(--font-serif); font-size: 1.8rem; }
+  .history-clear { background: none; border: none; color: var(--text-dim); font-size: .8rem; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all .2s; }
+  .history-clear:hover { background: var(--surface2); color: var(--bad); }
+  .history-empty { text-align: center; padding: 48px 24px; color: var(--text-dim); font-size: .9rem; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border); }
+  .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+  .history-item:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+  .history-item__img { width: 100%; height: 160px; object-fit: cover; background: var(--surface2); }
+  .history-item__info { padding: 12px; }
+  .history-item__label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-bottom: 4px; }
+  .history-item__result { font-weight: 600; font-size: .95rem; }
+  .history-item__result.good { color: var(--accent); }
+  .history-item__result.bad { color: var(--bad); }
+  .history-item__conf { font-size: .75rem; color: var(--text-dim); margin-top: 4px; }
+  .history-item__model { font-size: .7rem; color: var(--text-dim); margin-top: 4px; opacity: .6; }
 
-  @media (max-width: 540px) {
-    .header h1 { font-size: 2rem; }
+  .footer-note { text-align: center; margin-top: 48px; font-size: .75rem; color: var(--text-dim); opacity: .55; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+  @media (max-width: 640px) {
+    .header h1 { font-size: 2.2rem; }
     .preview-row { flex-direction: column; }
     .preview-img-wrap { flex: 0 0 auto; width: 100%; }
     .card { padding: 20px; }
+    .metrics { grid-template-columns: 1fr; }
+    .model-selector { flex-direction: column; align-items: flex-start; }
+    .model-selector__options { width: 100%; }
+    .history-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   }
 </style>
 </head>
@@ -151,16 +204,21 @@
 
 <div class="wrapper">
 
- <div class="brand-bar">
-  <img src="assets/medinno-logo-transparent.png" alt="Medinno Technologies Logo" class="brand-logo">
-  <span class="brand-text">Medinno Technologies Pvt. Ltd.</span>
-</div>
-
   <header class="header">
-    <div class="header__badge"><span class="dot"></span> AI-Powered Analysis</div>
-    <h1>Embryo Classifier</h1>
-    <p>Upload a microscopic embryo image and let the model assess its viability in seconds.</p>
+    <div class="header__badge"><span class="dot"></span> Multi-Model AI Analysis</div>
+    <h1>Embryo Classifier Pro</h1>
+    <p>Advanced embryo viability assessment powered by multiple deep learning architectures with real-time analysis.</p>
   </header>
+
+  <!-- Model Selector -->
+  <div class="model-selector">
+    <span class="model-selector__label">Select Model:</span>
+    <div class="model-selector__options">
+      <div class="model-option active" data-model="custom">Custom CNN</div>
+      <div class="model-option" data-model="resnet18">ResNet-18</div>
+      <div class="model-option" data-model="resnet50">ResNet-50</div>
+    </div>
+  </div>
 
   <div class="card">
     <div class="dropzone" id="dropzone">
@@ -195,34 +253,55 @@
     <div class="result" id="resultCard">
       <div class="result__header">
         <div class="result__icon" id="resultIcon"></div>
-        <div>
+        <div style="flex:1;">
           <div class="result__title" id="resultTitle"></div>
           <div class="result__confidence" id="resultConfLabel"></div>
+          <div class="result__model" id="resultModel"></div>
         </div>
       </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-card__label">Confidence Score</div>
+          <div class="metric-card__value" id="metricConf">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card__label">Quality Grade</div>
+          <div class="metric-card__value" id="metricGrade">—</div>
+        </div>
+      </div>
+
       <div class="conf-bar-wrap">
-        <div class="conf-bar-label"><span>Confidence</span><span id="confPercent"></span></div>
+        <div class="conf-bar-label"><span>Model Certainty</span><span id="confPercent"></span></div>
         <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar" style="width:0%"></div></div>
       </div>
+
       <div class="result__note" id="resultNote"></div>
     </div>
 
-    <button class="reset-link" id="resetBtn" style="display:none;">↺ Upload another image</button>
+    <button class="reset-link" id="resetBtn" style="display:none;">↺ Classify another embryo</button>
+  </div>
+
+  <!-- History Section -->
+  <div class="history-section" id="historySection" style="display:none;">
+    <div class="history-header">
+      <h2>Prediction History</h2>
+      <button class="history-clear" id="clearHistory">Clear All</button>
+    </div>
+    <div class="history-grid" id="historyGrid"></div>
+    <div class="history-empty" id="historyEmpty">No predictions yet. Upload an embryo image to get started.</div>
   </div>
 
   <p class="footer-note">⚠️ This tool is intended for research &amp; assisted decision-making only. Final clinical decisions must be made by qualified embryologists.</p>
 </div>
 
-<!-- ─── Script ─── -->
 <script>
 (function(){
-  // ┌─────────────────────────────────────────────────────┐
-  // │  🔧  PUT YOUR BACKEND URL HERE                      │
-  // │  e.g. "https://your-app.onrender.com"               │
-  // │  or   "http://localhost:8000"  (local testing)      │
-  // └─────────────────────────────────────────────────────┘
-  const BACKEND_URL =  "https://shubh16-embryo-classifier-api.hf.space";
- 
+  const BACKEND_URL = "https://shubh16-embryo-classifier-api.hf.space";
+  
+  let selectedModel = "custom";
+  let currentFile = null;
+  let predictionHistory = JSON.parse(localStorage.getItem('embryo_history') || '[]');
 
   const dropzone       = document.getElementById('dropzone');
   const fileInput      = document.getElementById('fileInput');
@@ -238,14 +317,28 @@
   const resultIcon     = document.getElementById('resultIcon');
   const resultTitle    = document.getElementById('resultTitle');
   const resultConfLabel= document.getElementById('resultConfLabel');
+  const resultModel    = document.getElementById('resultModel');
+  const metricConf     = document.getElementById('metricConf');
+  const metricGrade    = document.getElementById('metricGrade');
   const confPercent    = document.getElementById('confPercent');
   const confBar        = document.getElementById('confBar');
   const resultNote     = document.getElementById('resultNote');
   const resetBtn       = document.getElementById('resetBtn');
+  const historySection = document.getElementById('historySection');
+  const historyGrid    = document.getElementById('historyGrid');
+  const historyEmpty   = document.getElementById('historyEmpty');
+  const clearHistory   = document.getElementById('clearHistory');
 
-  let currentFile = null;
+  /* Model Selection */
+  document.querySelectorAll('.model-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.model-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedModel = btn.dataset.model;
+    });
+  });
 
-  /* ── Drag & Drop ── */
+  /* Drag & Drop */
   dropzone.addEventListener('dragover',  e => { e.preventDefault(); dropzone.classList.add('over'); });
   dropzone.addEventListener('dragleave', () => dropzone.classList.remove('over'));
   dropzone.addEventListener('drop', e => {
@@ -253,10 +346,9 @@
     if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
   });
   dropzone.addEventListener('click', () => fileInput.click());
-  browseBtn.addEventListener('click',  e => { e.stopPropagation(); fileInput.click(); });
+  browseBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
   fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
-  /* ── Handle File ── */
   function handleFile(file) {
     if (!file.type.startsWith('image/') && !file.name.match(/\.(tiff?|bmp)$/i)) {
       alert('Please upload a valid image (JPG, PNG, TIFF, BMP).'); return;
@@ -266,9 +358,9 @@
 
     const reader = new FileReader();
     reader.onload = ev => {
-      previewImg.src     = ev.target.result;
-      fileNameEl.textContent = file.name;
-      fileSizeEl.textContent = formatBytes(file.size);
+      previewImg.src           = ev.target.result;
+      fileNameEl.textContent   = file.name;
+      fileSizeEl.textContent   = formatBytes(file.size);
       previewSection.style.display = 'block';
       resultCard.style.display     = 'none';
       errorBox.style.display       = 'none';
@@ -283,17 +375,18 @@
     return (b / 1048576).toFixed(2) + ' MB';
   }
 
-  /* ── Classify (calls your FastAPI backend) ── */
+  /* Classify */
   classifyBtn.addEventListener('click', async () => {
-    classifyBtn.disabled         = true;
-    spinnerWrap.style.display    = 'block';
-    resultCard.style.display     = 'none';
-    errorBox.style.display       = 'none';
-    resetBtn.style.display       = 'none';
+    classifyBtn.disabled      = true;
+    spinnerWrap.style.display = 'block';
+    resultCard.style.display  = 'none';
+    errorBox.style.display    = 'none';
+    resetBtn.style.display    = 'none';
 
     try {
       const formData = new FormData();
-      formData.append('file', currentFile);                   // key must be "file" — matches FastAPI param name
+      formData.append('file', currentFile);
+      formData.append('model', selectedModel);
 
       const response = await fetch(BACKEND_URL + '/predict', {
         method: 'POST',
@@ -305,28 +398,33 @@
         throw new Error(`Server error ${response.status}: ${errText}`);
       }
 
-      const data = await response.json();                     // { label: "GOOD"|"BAD", confidence: 0.87 }
+      const data = await response.json();
       showResult(data.label, data.confidence);
+      saveToHistory(data.label, data.confidence);
 
     } catch (err) {
       spinnerWrap.style.display = 'none';
       classifyBtn.disabled      = false;
       errorBox.style.display    = 'block';
-      errorBox.textContent      = '⚠️  ' + err.message + ' — Make sure your backend is running.';
+      errorBox.textContent      = '⚠️  ' + err.message;
     }
   });
 
-  /* ── Show Result ── */
   function showResult(label, confidence) {
     spinnerWrap.style.display = 'none';
     classifyBtn.disabled      = false;
 
     const isGood = label.toUpperCase() === 'GOOD';
+    const grade = confidence > 0.9 ? 'A+' : confidence > 0.8 ? 'A' : confidence > 0.7 ? 'B+' : confidence > 0.6 ? 'B' : 'C';
+    
     resultCard.className        = 'result ' + (isGood ? 'good' : 'bad');
     resultIcon.textContent      = isGood ? '✅' : '⚠️';
     resultTitle.textContent     = isGood ? 'Good Embryo' : 'Poor Embryo';
-    resultConfLabel.textContent = `Model confidence: ${(confidence * 100).toFixed(1)} %`;
-    confPercent.textContent     = `${(confidence * 100).toFixed(1)} %`;
+    resultConfLabel.textContent = `Confidence: ${(confidence * 100).toFixed(1)}%`;
+    resultModel.textContent     = `Model: ${getModelName(selectedModel)}`;
+    metricConf.textContent      = `${(confidence * 100).toFixed(1)}%`;
+    metricGrade.textContent     = grade;
+    confPercent.textContent     = `${(confidence * 100).toFixed(1)}%`;
 
     confBar.style.width = '0%';
     requestAnimationFrame(() => {
@@ -341,7 +439,56 @@
     resetBtn.style.display   = 'block';
   }
 
-  /* ── Reset ── */
+  function getModelName(model) {
+    const names = { 'custom': 'Custom CNN', 'resnet18': 'ResNet-18', 'resnet50': 'ResNet-50' };
+    return names[model] || model;
+  }
+
+  /* History Management */
+  function saveToHistory(label, confidence) {
+    const entry = {
+      id: Date.now(),
+      image: previewImg.src,
+      label: label,
+      confidence: confidence,
+      model: selectedModel,
+      timestamp: new Date().toISOString()
+    };
+    predictionHistory.unshift(entry);
+    if (predictionHistory.length > 20) predictionHistory.pop();
+    localStorage.setItem('embryo_history', JSON.stringify(predictionHistory));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (predictionHistory.length === 0) {
+      historySection.style.display = 'none';
+      return;
+    }
+    historySection.style.display = 'block';
+    historyEmpty.style.display   = 'none';
+    historyGrid.innerHTML = predictionHistory.map(item => `
+      <div class="history-item" data-id="${item.id}">
+        <img class="history-item__img" src="${item.image}" alt="Embryo"/>
+        <div class="history-item__info">
+          <div class="history-item__label">Result</div>
+          <div class="history-item__result ${item.label.toLowerCase()}">${item.label}</div>
+          <div class="history-item__conf">Confidence: ${(item.confidence * 100).toFixed(1)}%</div>
+          <div class="history-item__model">${getModelName(item.model)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  clearHistory.addEventListener('click', () => {
+    if (confirm('Clear all prediction history?')) {
+      predictionHistory = [];
+      localStorage.removeItem('embryo_history');
+      renderHistory();
+    }
+  });
+
+  /* Reset */
   resetBtn.addEventListener('click', () => {
     currentFile = null; fileInput.value = '';
     previewSection.style.display = 'none';
@@ -349,6 +496,8 @@
     errorBox.style.display       = 'none';
     resetBtn.style.display       = 'none';
   });
+
+  renderHistory();
 })();
 </script>
 </body>
